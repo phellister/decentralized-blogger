@@ -1,0 +1,12 @@
+{
+  "canisters": {
+    "web3_blogger": {
+      "type": "custom",
+      "root": "src",
+      "ts": "src/index.ts",
+      "candid": "src/index.did",
+      "build": "npx azle web3_blogger",
+      "wasm": ".azle/web3_blogger/web3_blogger.wasm.gz"
+    }
+  }
+}
