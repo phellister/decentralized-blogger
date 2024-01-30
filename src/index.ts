@@ -1,3 +1,4 @@
+// Importing necessary modules from "azle"
 import {
   $query,
   $update,
@@ -13,32 +14,35 @@ import {
 } from "azle";
 import { v4 as uuidv4 } from "uuid";
 
+// Define the structure for Blog
 type Blog = Record<{
-  id: string;
-  title: string;
-  content: string;
-  blogger: Principal;
-  likes: number;
-  tags: Vec<string>;
-  category: string;
-  comments: Vec<string>;
-  updated_at: Opt<nat64>;
-  created_date: nat64;
+  id: string; // Unique identifier for the blog
+  title: string; // Title of the blog
+  content: string; // Content of the blog
+  blogger: Principal; // The author of the blog
+  likes: number; // Number of likes the blog has received
+  tags: Vec<string>; // Tags associated with the blog
+  category: string; // Category of the blog
+  comments: Vec<string>; // Comments on the blog
+  updated_at: Opt<nat64>; // The timestamp of the last update
+  created_date: nat64; // The timestamp of the blog creation
 }>;
 
+// Define the structure for BlogPayload
 type BlogPayload = Record<{
-  title: string;
-  content: string;
-  tags: Vec<string>;
-  category: string;
+  title: string; // Title of the blog
+  content: string; // Content of the blog
+  tags: Vec<string>; // Tags associated with the blog
+  category: string; // Category of the blog
 }>;
 
+// Create a new StableBTreeMap to store blogs
 const blogStorage = new StableBTreeMap<string, Blog>(0, 44, 512);
 
-//  create a new blog
+// Function to create a new blog
 $update;
 export function createBlog(payload: BlogPayload): Result<Blog, string> {
-  // validate payload
+  // Validate payload
   if (
     !payload.title ||
     !payload.content ||
@@ -49,20 +53,21 @@ export function createBlog(payload: BlogPayload): Result<Blog, string> {
   }
 
   try {
-    // create a new blog
+    // Create a new blog
     const blog: Blog = {
-      id: uuidv4(),
+      id: uuidv4(), // Generate a unique ID for the blog
       title: payload.title,
       content: payload.content,
-      blogger: ic.caller(),
-      likes: 0,
+      blogger: ic.caller(), // The author of the blog is the caller
+      likes: 0, // Initialize likes to 0
       tags: payload.tags,
       category: payload.category,
-      comments: [],
-      updated_at: Opt.None,
-      created_date: ic.time(),
+      comments: [], // Initialize comments as an empty array
+      updated_at: Opt.None, // Initialize updated_at as None
+      created_date: ic.time(), // The creation date is the current time
     };
 
+    // Insert the new blog into blogStorage
     blogStorage.insert(blog.id, blog);
 
     return Result.Ok<Blog, string>(blog);
@@ -73,13 +78,13 @@ export function createBlog(payload: BlogPayload): Result<Blog, string> {
   }
 }
 
-// update a blog
+// Function to update a blog
 $update;
 export function updateBlog(
   id: string,
   payload: BlogPayload
 ): Result<Blog, string> {
-  // validate payload
+  // Validate payload
   if (
     !payload.title ||
     !payload.content ||
@@ -91,20 +96,21 @@ export function updateBlog(
 
   return match(blogStorage.get(id), {
     Some: (blog) => {
-      // check if the caller is the blog owner
+      // Check if the caller is the blog owner
       if (ic.caller() !== blog.blogger) {
         return Result.Err<Blog, string>(
           "Unauthorized, only the blog owner can update the blog"
         );
       }
 
-      // update the blog
+      // Update the blog
       blog.title = payload.title;
       blog.content = payload.content;
       blog.tags = payload.tags;
       blog.category = payload.category;
-      blog.updated_at = Opt.Some(ic.time());
+      blog.updated_at = Opt.Some(ic.time()); // The update time is the current time
 
+      // Insert the updated blog into blogStorage
       blogStorage.insert(blog.id, blog);
 
       return Result.Ok<Blog, string>(blog);
@@ -113,11 +119,11 @@ export function updateBlog(
   });
 }
 
-// get all blogs
+// Function to get all blogs
 $query;
 export function getAllBlogs(): Result<Vec<Blog>, string> {
   const blogs = blogStorage.values();
-  // check for blogs
+  // Check for blogs
   if (blogs.length === 0) {
     return Result.Err<Vec<Blog>, string>(
       "No blogs found, please add them first"
@@ -126,7 +132,7 @@ export function getAllBlogs(): Result<Vec<Blog>, string> {
   return Result.Ok<Vec<Blog>, string>(blogs);
 }
 
-// get blog by id
+// Function to get a blog by id
 $query;
 export function getBlog(id: string): Result<Blog, string> {
   const blog = blogStorage.get(id);
@@ -140,7 +146,7 @@ export function getBlog(id: string): Result<Blog, string> {
   });
 }
 
-// search blogs by title and content
+// Function to search blogs by title and content
 $query;
 export function searchBlogsByTitleAndContent(
   query: string
@@ -152,7 +158,7 @@ export function searchBlogsByTitleAndContent(
       blog.content.toLowerCase().includes(query.toLowerCase())
   );
 
-  // check for blogs
+  // Check for blogs
   if (filteredBlogs.length === 0) {
     return Result.Err<Vec<Blog>, string>(
       "No blogs found, please add them first"
@@ -161,7 +167,7 @@ export function searchBlogsByTitleAndContent(
   return Result.Ok<Vec<Blog>, string>(filteredBlogs);
 }
 
-// search blogs by tags
+// Function to search blogs by tags
 $query;
 export function searchBlogsByTags(query: string): Result<Vec<Blog>, string> {
   const blogs = blogStorage.values();
@@ -169,7 +175,7 @@ export function searchBlogsByTags(query: string): Result<Vec<Blog>, string> {
     blog.tags.includes(query.toLowerCase())
   );
 
-  // check for blogs
+  // Check for blogs
   if (filteredBlogs.length === 0) {
     return Result.Err<Vec<Blog>, string>(
       "No blogs found, please add them first"
@@ -178,7 +184,7 @@ export function searchBlogsByTags(query: string): Result<Vec<Blog>, string> {
   return Result.Ok<Vec<Blog>, string>(filteredBlogs);
 }
 
-// search blogs by category
+// Function to search blogs by category
 $query;
 export function searchBlogsByCategory(
   query: string
@@ -188,7 +194,7 @@ export function searchBlogsByCategory(
     blog.category.toLowerCase().includes(query.toLowerCase())
   );
 
-  // check for blogs
+  // Check for blogs
   if (filteredBlogs.length === 0) {
     return Result.Err<Vec<Blog>, string>(
       "No blogs found, please add them first"
@@ -197,21 +203,22 @@ export function searchBlogsByCategory(
   return Result.Ok<Vec<Blog>, string>(filteredBlogs);
 }
 
-// like a blog
+// Function to like a blog
 $update;
 export function likeBlog(id: string): Result<Blog, string> {
   return match(blogStorage.get(id), {
     Some: (blog) => {
-      // check if the caller is the blog owner
+      // Check if the caller is the blog owner
       if (ic.caller() === blog.blogger) {
         return Result.Err<Blog, string>(
           "not allowed, you cannot like your own blog"
         );
       }
 
-      // update the blog
+      // Update the blog
       blog.likes += 1;
 
+      // Insert the updated blog into blogStorage
       blogStorage.insert(blog.id, blog);
 
       return Result.Ok<Blog, string>(blog);
@@ -220,14 +227,15 @@ export function likeBlog(id: string): Result<Blog, string> {
   });
 }
 
-// comment on a blog
+// Function to comment on a blog
 $update;
 export function commentBlog(id: string, comment: string): Result<Blog, string> {
   return match(blogStorage.get(id), {
     Some: (blog) => {
-      // update the blog
+      // Update the blog
       blog.comments.push(comment);
 
+      // Insert the updated blog into blogStorage
       blogStorage.insert(blog.id, blog);
 
       return Result.Ok<Blog, string>(blog);
@@ -236,12 +244,12 @@ export function commentBlog(id: string, comment: string): Result<Blog, string> {
   });
 }
 
-// get comments on a blog
+// Function to get comments on a blog
 $query;
 export function getBlogComments(id: string): Result<Vec<string>, string> {
   return match(blogStorage.get(id), {
     Some: (blog) => {
-      // check if blog has comments
+      // Check if blog has comments
       if (blog.comments.length === 0) {
         return Result.Err<Vec<string>, string>(
           "No comments found for blog id: " + id
@@ -254,19 +262,19 @@ export function getBlogComments(id: string): Result<Vec<string>, string> {
   });
 }
 
-// delete a blog
+// Function to delete a blog
 $update;
 export function deleteBlog(id: string): Result<Blog, string> {
   return match(blogStorage.get(id), {
     Some: (blog) => {
-      // check if the caller is the blog owner
+      // Check if the caller is the blog owner
       if (ic.caller() !== blog.blogger) {
         return Result.Err<Blog, string>(
           "Unauthorized, only the blog owner can delete the blog"
         );
       }
 
-      // delete the blog
+      // Delete the blog
       blogStorage.remove(id);
 
       return Result.Ok<Blog, string>(blog);
